@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saints Memory Match</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: #4a4a4a;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            font-style: italic;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-item {
+            text-align: center;
+            color: #4a4a4a;
+            font-weight: bold;
+        }
+
+        .info-value {
+            font-size: 1.5rem;
+            color: #667eea;
+            margin-bottom: 0.25rem;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            border: 3px solid transparent;
+        }
+
+        .card:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .card.flipped {
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            border-color: #ffd700;
+        }
+
+        .card.matched {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-color: #28a745;
+            transform: scale(0.95);
+            animation: matchPulse 0.6s ease-in-out;
+        }
+
+        .card.wrong {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border-color: #dc3545;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes hintGlow {
+            from { box-shadow: 0 0 20px rgba(255, 107, 107, 0.6); }
+            to { box-shadow: 0 0 30px rgba(255, 107, 107, 0.8); }
+        }
+
+        @keyframes matchPulse {
+            0%, 100% { transform: scale(0.95); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .card-back {
+            color: white;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-front {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #333;
+        }
+
+        .card.flipped .card-back {
+            display: none;
+        }
+
+        .card.flipped .card-front {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .saint-name {
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: #4a4a4a;
+        }
+
+        .saint-info {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .saint-symbol {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .game-controls {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .btn.secondary:hover {
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .victory-message {
+            display: none;
+            text-align: center;
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+            border: 3px solid #28a745;
+        }
+
+        .victory-message.show {
+            display: block;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .victory-title {
+            font-size: 2rem;
+            color: #155724;
+            margin-bottom: 1rem;
+        }
+
+        .victory-stats {
+            color: #155724;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .spiritual-message {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-top: 2rem;
+            border-left: 5px solid #ffd700;
+        }
+
+        .spiritual-title {
+            font-weight: bold;
+            color: #4a4a4a;
+            margin-bottom: 0.5rem;
+        }
+
+        .spiritual-text {
+            color: #666;
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .game-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .card {
+                min-height: 100px;
+            }
+            
+            .saint-name {
+                font-size: 0.9rem;
+            }
+            
+            .saint-info {
+                font-size: 0.7rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⛪ Saints Memory Match ⛪</h1>
+        <p class="subtitle">Learn about Catholic Saints while exercising your memory</p>
+    </div>
+
+    <div class="game-info">
+        <div class="info-item">
+            <div class="info-value" id="moves">0</div>
+            <div>Moves</div>
+        </div>
+        <div class="info-item">
+            <div class="info-value" id="matches">0</div>
+            <div>Matches</div>
+        </div>
+        <div class="info-item">
+            <div class="info-value" id="timer">00:00</div>
+            <div>Time</div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="game-grid" id="gameGrid"></div>
+        
+        <div class="game-controls">
+            <button class="btn" onclick="shuffleCards()">New Game</button>
+        </div>
+
+        <div class="victory-message" id="victoryMessage">
+            <div class="victory-title">🎉 Congratulations! 🎉</div>
+            <div class="victory-stats" id="victoryStats"></div>
+            <p>You've successfully learned about these holy saints! Take a moment to reflect on their examples of faith and devotion.</p>
+        </div>
+
+        <div class="spiritual-message">
+            <div class="spiritual-title">✝️ Spiritual Reflection</div>
+            <div class="spiritual-text" id="spiritualMessage">
+                "Therefore, since we are surrounded by such a great cloud of witnesses, let us throw off everything that hinders and the sin that so easily entangles. And let us run with perseverance the race marked out for us." - Hebrews 12:1
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const saints = [
+            { name: "St. Francis", info: "Patron of Animals & Environment", symbol: "🐺" },
+            { name: "St. Teresa", info: "Doctor of the Church", symbol: "🌹" },
+            { name: "St. Joseph", info: "Patron of Workers", symbol: "🔨" },
+            { name: "St. Mary", info: "Mother of Jesus", symbol: "👑" },
+            { name: "St. Peter", info: "First Pope", symbol: "🗝️" },
+            { name: "St. Paul", info: "Apostle to the Gentiles", symbol: "⚔️" },
+            { name: "St. Joan", info: "Patron of France", symbol: "🛡️" },
+            { name: "St. Anthony", info: "Finder of Lost Things", symbol: "🔍" }
+        ];
+
+        const spiritualMessages = [
+            "The saints show us that holiness is possible in every walk of life. Their examples inspire us to live more faithfully.",
+            "Each saint faced challenges but remained faithful to God. Their stories encourage us in our own spiritual journey.",
+            "The communion of saints reminds us that we are never alone in our faith journey. They intercede for us in heaven.",
+            "Saints were ordinary people who did extraordinary things through God's grace. We too can strive for holiness.",
+            "By studying the saints, we learn different paths to holiness and find inspiration for our own spiritual growth."
+        ];
+
+        let gameCards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let gameStarted = false;
+
+        function initGame() {
+            const cardPairs = [...saints, ...saints];
+            gameCards = shuffleArray(cardPairs);
+            createGameGrid();
+            resetStats();
+            updateSpiritualMessage();
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function createGameGrid() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            
+            gameCards.forEach((saint, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.index = index;
+                card.dataset.saint = saint.name;
+                
+                card.innerHTML = `
+                    <div class="card-back">✝️</div>
+                    <div class="card-front">
+                        <div class="saint-symbol">${saint.symbol}</div>
+                        <div class="saint-name">${saint.name}</div>
+                        <div class="saint-info">${saint.info}</div>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => flipCard(card, index));
+                grid.appendChild(card);
+            });
+        }
+
+        function flipCard(card, index) {
+            if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+
+            if (!gameStarted) {
+                startTimer();
+                gameStarted = true;
+            }
+
+            card.classList.add('flipped');
+            flippedCards.push({ card, index, saint: gameCards[index] });
+
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [first, second] = flippedCards;
+            
+            setTimeout(() => {
+                if (first.saint.name === second.saint.name) {
+                    // Match found
+                    first.card.classList.add('matched');
+                    second.card.classList.add('matched');
+                    matchedPairs++;
+                    document.getElementById('matches').textContent = matchedPairs;
+                    
+                    if (matchedPairs === saints.length) {
+                        endGame();
+                    }
+                } else {
+                    // No match
+                    first.card.classList.add('wrong');
+                    second.card.classList.add('wrong');
+                    
+                    setTimeout(() => {
+                        first.card.classList.remove('flipped', 'wrong');
+                        second.card.classList.remove('flipped', 'wrong');
+                    }, 1000);
+                }
+                
+                flippedCards = [];
+            }, 1000);
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            const timeText = document.getElementById('timer').textContent;
+            
+            document.getElementById('victoryStats').textContent = 
+                `Completed in ${moves} moves and ${timeText}!`;
+            document.getElementById('victoryMessage').classList.add('show');
+            
+            // Update spiritual message
+            updateSpiritualMessage();
+        }
+
+        function resetStats() {
+            moves = 0;
+            matchedPairs = 0;
+            flippedCards = [];
+            gameStarted = false;
+            
+            document.getElementById('moves').textContent = '0';
+            document.getElementById('matches').textContent = '0';
+            document.getElementById('timer').textContent = '00:00';
+            document.getElementById('victoryMessage').classList.remove('show');
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            startTime = null;
+        }
+
+        function shuffleCards() {
+            initGame();
+        }
+
+        function showHint() {
+            // Only show hint if no cards are currently flipped
+            if (flippedCards.length === 0) {
+                const unmatched = document.querySelectorAll('.card:not(.matched)');
+                const randomCards = [];
+                
+                // Find a matching pair
+                for (let i = 0; i < unmatched.length - 1; i++) {
+                    for (let j = i + 1; j < unmatched.length; j++) {
+                        if (unmatched[i].dataset.saint === unmatched[j].dataset.saint) {
+                            randomCards.push(unmatched[i], unmatched[j]);
+                            break;
+                        }
+                    }
+                    if (randomCards.length === 2) break;
+                }
+                
+                if (randomCards.length === 2) {
+                    // Add a special hint class for visual feedback
+                    randomCards.forEach(card => {
+                        card.classList.add('flipped', 'hint-peek');
+                    });
+                    
+                    // Hide the cards after 3 seconds
+                    setTimeout(() => {
+                        randomCards.forEach(card => {
+                            card.classList.remove('flipped', 'hint-peek');
+                        });
+                    }, 3000);
+                }
+            }
+        }
+
+        function updateSpiritualMessage() {
+            const randomMessage = spiritualMessages[Math.floor(Math.random() * spiritualMessages.length)];
+            document.getElementById('spiritualMessage').textContent = randomMessage;
+        }
+
+        // Initialize game when page loads
+        initGame();
+    </script>
+</body>
+</html>
